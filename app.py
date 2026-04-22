@@ -64,13 +64,15 @@ def init_db():
 init_db()
 
 model = None
+model_load_error = None
+model_load_traceback = None
 if TF_AVAILABLE and os.path.exists("model.h5"):
     try:
         model = load_model("model.h5")
     except Exception as e:
-        print(f"Failed to load CNN model: {e}")
+        model_load_error = str(e)
         import traceback
-        traceback.print_exc()
+        model_load_traceback = traceback.format_exc()
 
 if os.path.exists("classes.json"):
     with open("classes.json", "r") as f:
@@ -83,6 +85,8 @@ def predict():
     if not TF_AVAILABLE:
         return jsonify({"error": "TensorFlow is not installed. Please try again in 2 minutes when pip finishes."}), 500
     if model is None:
+        if model_load_error:
+            return jsonify({"error": f"Model exist but failed to load! Error: {model_load_error} | Trace: {model_load_traceback}"}), 500
         return jsonify({"error": "The Custom CNN Model (model.h5) is not generated yet! Please run train.py"}), 500
 
     if "file" not in request.files:

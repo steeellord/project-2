@@ -1,7 +1,7 @@
 flask
 flask-cors
 pillow
-google-generativeai
+google-genai
 numpy
 python-dotenv
 tensorflow-cpu==2.15.0

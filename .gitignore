@@ -1,0 +1,8 @@
+node_modules/
+Dataset/
+.DS_Store
+dist/
+*.txt
+test.jpg
+.env
+capstone.db

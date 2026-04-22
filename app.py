@@ -38,9 +38,15 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE,
             name TEXT,
+            email TEXT,
             password TEXT
         )
     ''')
+    try:
+        c.execute('ALTER TABLE users ADD COLUMN email TEXT')
+    except sqlite3.OperationalError:
+        pass
+    
     c.execute('''
         CREATE TABLE IF NOT EXISTS scans (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -63,6 +69,8 @@ if TF_AVAILABLE and os.path.exists("model.h5"):
         model = load_model("model.h5")
     except Exception as e:
         print(f"Failed to load CNN model: {e}")
+        import traceback
+        traceback.print_exc()
 
 if os.path.exists("classes.json"):
     with open("classes.json", "r") as f:

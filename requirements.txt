@@ -6,3 +6,4 @@ numpy
 python-dotenv
 tensorflow-cpu==2.15.0
 gunicorn
+h5py

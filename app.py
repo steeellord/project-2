@@ -2,7 +2,7 @@ import os
 import json
 import numpy as np
 from PIL import Image
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import sqlite3
 import datetime
@@ -19,8 +19,16 @@ from dotenv import load_dotenv
 load_dotenv()
 client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY", ""))
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='dist', static_url_path='/')
 CORS(app)
+
+@app.route('/')
+def index():
+    return send_from_directory(app.static_folder, 'index.html')
+
+@app.errorhandler(404)
+def not_found(e):
+    return send_from_directory(app.static_folder, 'index.html')
 
 def init_db():
     conn = sqlite3.connect('capstone.db')

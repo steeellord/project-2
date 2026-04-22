@@ -4,4 +4,5 @@ pillow
 google-generativeai
 numpy
 python-dotenv
-tensorflow==2.15.0
+tensorflow-cpu==2.15.0
+gunicorn

@@ -55,9 +55,9 @@ const Scan = ({ t, setActiveTab }) => {
                     body: formData,
                 });
                 
-                if (!res.ok) throw new Error("Server error");
-                
                 const data = await res.json();
+                if (!res.ok) throw new Error(data.error || "Server error");
+
                 if (data.error) {
                     setPredictionResult({ error: data.error });
                 } else if (data.confidence < 0.0) {
@@ -67,7 +67,7 @@ const Scan = ({ t, setActiveTab }) => {
                 }
             } catch(e) {
                 console.error(e);
-                setPredictionResult({ error: "Something went wrong" });
+                setPredictionResult({ error: e.message || "Something went wrong" });
             }
         }, 'image/jpeg');
     };
@@ -89,8 +89,9 @@ const Scan = ({ t, setActiveTab }) => {
                 method: 'POST',
                 body: formData,
             });
-            if (!res.ok) throw new Error("Server error");
             const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Server error");
+
             
             if (data.error) {
                 setPredictionResult({ error: data.error });
@@ -111,7 +112,7 @@ const Scan = ({ t, setActiveTab }) => {
             }
         } catch(e) {
             console.error(e);
-            setPredictionResult({ error: "Something went wrong" });
+            setPredictionResult({ error: e.message || "Something went wrong" });
         }
     };
 

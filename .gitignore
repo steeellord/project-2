@@ -1,7 +1,7 @@
 node_modules/
 Dataset/
 .DS_Store
-dist/
+
 
 test.jpg
 .env

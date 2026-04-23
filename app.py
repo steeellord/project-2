@@ -7,11 +7,7 @@ from flask_cors import CORS
 import sqlite3
 import datetime
 
-try:
-    from tensorflow.keras.models import load_model
-    TF_AVAILABLE = True
-except ImportError:
-    TF_AVAILABLE = False
+TF_AVAILABLE = True # Assume true, will update in background thread
 
 from google import genai
 from dotenv import load_dotenv
@@ -71,14 +67,20 @@ model_load_error = None
 model_load_traceback = None
 
 def load_model_bg():
-    global model, model_loading, model_load_error, model_load_traceback
-    if TF_AVAILABLE and os.path.exists("model.h5"):
+    global model, model_loading, model_load_error, model_load_traceback, TF_AVAILABLE
+    if os.path.exists("model.h5"):
         try:
+            from tensorflow.keras.models import load_model
             model = load_model("model.h5")
+        except ImportError:
+            TF_AVAILABLE = False
+            model_load_error = "TensorFlow is not installed."
         except Exception as e:
             model_load_error = str(e)
             import traceback
             model_load_traceback = traceback.format_exc()
+    else:
+        model_load_error = "model.h5 not found."
     model_loading = False
 
 model_loading = True

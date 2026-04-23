@@ -5,7 +5,7 @@ import Scan from './components/Scan';
 import Profile from './components/Profile';
 import BottomNav from './components/BottomNav';
 import Auth from './components/Auth';
-import { Check } from 'lucide-react';
+import { Check, ArrowLeft } from 'lucide-react';
 
 const translations = {
     en: {
@@ -64,12 +64,36 @@ const languages = [
 ];
 
 const App = () => {
-    const [activeTab, setActiveTab] = useState('home');
+    const [activeTab, setActiveTabState] = useState(() => {
+        const state = window.history.state;
+        return state && state.tab ? state.tab : 'home';
+    });
     const [lang, setLang] = useState('en');
     const [showLangModal, setShowLangModal] = useState(false);
 
     const [userId, setUserId] = useState(localStorage.getItem('userId') || null);
     const [userName, setUserName] = useState(localStorage.getItem('userName') || "Abhishek");
+
+    useEffect(() => {
+        if (!window.history.state || !window.history.state.tab) {
+            window.history.replaceState({ tab: activeTab }, '');
+        }
+        
+        const handlePopState = (e) => {
+            if (e.state && e.state.tab) {
+                setActiveTabState(e.state.tab);
+            }
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, []);
+
+    const setActiveTab = (tab) => {
+        if (tab !== activeTab) {
+            window.history.pushState({ tab }, '');
+            setActiveTabState(tab);
+        }
+    };
 
     const t = translations[lang];
 
@@ -89,6 +113,12 @@ const App = () => {
 
     return (
         <div className="app-container">
+            {activeTab !== 'home' && (
+                <div className="top-bar" onClick={() => setActiveTab('home')}>
+                    <ArrowLeft size={20} />
+                    <span>Back</span>
+                </div>
+            )}
             <div className="content">
                 {renderContent()}
             </div>

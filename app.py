@@ -146,6 +146,7 @@ def signup():
     data = request.json
     username = data.get("username")
     name = data.get("name")
+    email = data.get("email")
     password = data.get("password")
     
     if not username or not name or not password:
@@ -154,7 +155,7 @@ def signup():
     try:
         conn = sqlite3.connect('capstone.db')
         c = conn.cursor()
-        c.execute('INSERT INTO users (username, name, password) VALUES (?, ?, ?)', (username, name, password))
+        c.execute('INSERT INTO users (username, name, email, password) VALUES (?, ?, ?, ?)', (username, name, email, password))
         conn.commit()
         user_id = c.lastrowid
         conn.close()
@@ -172,7 +173,7 @@ def login():
     
     conn = sqlite3.connect('capstone.db')
     c = conn.cursor()
-    c.execute('SELECT id, name, email FROM users WHERE username = ? AND password = ?', (username, password))
+    c.execute('SELECT id, name, email FROM users WHERE (username = ? OR email = ?) AND password = ?', (username, username, password))
     user = c.fetchone()
     conn.close()
     

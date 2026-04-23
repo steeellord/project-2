@@ -15,6 +15,10 @@ const Chatbot = ({ t, lang = 'en' }) => {
             localStorage.removeItem('plantData');
             autoAskAI(parsed);
         }
+        
+        return () => {
+            window.speechSynthesis.cancel();
+        };
     }, []);
 
     const autoAskAI = async (data) => {

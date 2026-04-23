@@ -64,6 +64,17 @@ const Scan = ({ t, setActiveTab }) => {
                     setPredictionResult({ error: "Try clearer image" });
                 } else {
                     setPredictionResult(data);
+                    
+                    const userId = localStorage.getItem('userId');
+                    if (userId) {
+                        const isLocal = import.meta.env.DEV;
+                        const apiUrl = isLocal ? `http://${window.location.hostname}:5001` : '';
+                        fetch(`${apiUrl}/save_scan`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ userId, plant: data.plant, disease: data.disease, confidence: data.confidence })
+                        }).catch(err => console.error(err));
+                    }
                 }
             } catch(e) {
                 console.error(e);

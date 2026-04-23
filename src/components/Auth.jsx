@@ -3,7 +3,7 @@ import { UserPlus, LogIn, Leaf } from 'lucide-react';
 
 const Auth = ({ setUserId, setUserName }) => {
     const [isLogin, setIsLogin] = useState(true);
-    const [formData, setFormData] = useState({ username: '', name: '', password: '' });
+    const [formData, setFormData] = useState({ username: '', name: '', email: '', password: '' });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -11,6 +11,14 @@ const Auth = ({ setUserId, setUserName }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        // Trim inputs to prevent accidental trailing spaces
+        const trimmedData = {
+            username: formData.username.trim(),
+            password: formData.password,
+            ...(isLogin ? {} : { name: formData.name.trim(), email: formData.email.trim() })
+        };
+        
         setError('');
         setLoading(true);
         const endpoint = isLogin ? '/login' : '/signup';
@@ -19,7 +27,7 @@ const Auth = ({ setUserId, setUserName }) => {
             const res = await fetch(`${apiUrl}${endpoint}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(trimmedData)
             });
             const data = await res.json();
             
@@ -52,13 +60,21 @@ const Auth = ({ setUserId, setUserName }) => {
                 
                 <form onSubmit={handleSubmit} className="auth-form">
                     {!isLogin && (
-                        <input 
-                            type="text" 
-                            placeholder="Full Name" 
-                            value={formData.name}
-                            onChange={(e) => setFormData({...formData, name: e.target.value})}
-                            required
-                        />
+                        <>
+                            <input 
+                                type="text" 
+                                placeholder="Full Name" 
+                                value={formData.name}
+                                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                                required
+                            />
+                            <input 
+                                type="email" 
+                                placeholder="Email Address (Optional)" 
+                                value={formData.email}
+                                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                            />
+                        </>
                     )}
                     <input 
                         type="text" 

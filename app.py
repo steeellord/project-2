@@ -63,16 +63,26 @@ def init_db():
 
 init_db()
 
+import threading
+
 model = None
+model_loading = False
 model_load_error = None
 model_load_traceback = None
-if TF_AVAILABLE and os.path.exists("model.h5"):
-    try:
-        model = load_model("model.h5")
-    except Exception as e:
-        model_load_error = str(e)
-        import traceback
-        model_load_traceback = traceback.format_exc()
+
+def load_model_bg():
+    global model, model_loading, model_load_error, model_load_traceback
+    if TF_AVAILABLE and os.path.exists("model.h5"):
+        try:
+            model = load_model("model.h5")
+        except Exception as e:
+            model_load_error = str(e)
+            import traceback
+            model_load_traceback = traceback.format_exc()
+    model_loading = False
+
+model_loading = True
+threading.Thread(target=load_model_bg, daemon=True).start()
 
 if os.path.exists("classes.json"):
     with open("classes.json", "r") as f:
@@ -84,6 +94,8 @@ else:
 def predict():
     if not TF_AVAILABLE:
         return jsonify({"error": "TensorFlow is not installed. Please try again in 2 minutes when pip finishes."}), 500
+    if model_loading:
+        return jsonify({"error": "AI Model is still warming up... Please wait about 30 seconds and try again!"}), 503
     if model is None:
         if model_load_error:
             return jsonify({"error": f"Model exist but failed to load! Error: {model_load_error} | Trace: {model_load_traceback}"}), 500

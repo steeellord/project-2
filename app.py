@@ -146,7 +146,18 @@ def predict():
             "source": "CNN"
         }
         
-        if (confidence < 0.80 or plant == "Unknown" or disease == "Unknown") and ai_data:
+        # Determine if we should show the AI fallback
+        show_ai = False
+        if confidence < 0.80 or plant == "Unknown" or disease == "Unknown":
+            show_ai = True
+        elif ai_data:
+            # Check for hallucination: CNN says one plant, but AI says another (e.g. CNN says Strawberry, AI says Mango)
+            cnn_p = plant.lower().split()[0]
+            ai_p = ai_data.get("plant", "").lower().split()[0]
+            if cnn_p and ai_p and cnn_p not in ai_p and ai_p not in cnn_p:
+                show_ai = True
+
+        if show_ai and ai_data:
             response_data["ai_fallback"] = {
                 "plant": ai_data.get("plant", "Unknown"),
                 "disease": ai_data.get("disease", "Unknown"),

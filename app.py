@@ -55,27 +55,29 @@ def init_db():
 
 init_db()
 
+import threading
+
+model_loading = False
 model = None
 model_load_error = None
 model_load_traceback = None
 
-def get_model():
-    global model, model_load_error, model_load_traceback, TF_AVAILABLE
-    if model is None and TF_AVAILABLE:
-        if os.path.exists("model.h5"):
-            try:
-                from tensorflow.keras.models import load_model
-                model = load_model("model.h5")
-            except ImportError:
-                TF_AVAILABLE = False
-                model_load_error = "TensorFlow is not installed."
-            except Exception as e:
-                model_load_error = str(e)
-                import traceback
-                model_load_traceback = traceback.format_exc()
-        else:
-            model_load_error = "model.h5 not found."
-    return model
+def load_model_bg():
+    global model, model_loading, model_load_error, model_load_traceback, TF_AVAILABLE
+    if os.path.exists("model.h5"):
+        try:
+            from tensorflow.keras.models import load_model
+            model = load_model("model.h5")
+        except ImportError:
+            TF_AVAILABLE = False
+            model_load_error = "TensorFlow is not installed."
+        except Exception as e:
+            model_load_error = str(e)
+            import traceback
+            model_load_traceback = traceback.format_exc()
+    else:
+        model_load_error = "model.h5 not found."
+    model_loading = False
 
 if os.path.exists("classes.json"):
     with open("classes.json", "r") as f:
@@ -85,13 +87,20 @@ else:
 
 @app.route("/predict", methods=["POST"])
 def predict():
-    loaded_model = get_model()
+    global model, model_loading
+    
     if not TF_AVAILABLE:
         return jsonify({"error": "TensorFlow is not installed. Please try again in 2 minutes when pip finishes."}), 500
-    if loaded_model is None:
+        
+    if model is None:
         if model_load_error:
             return jsonify({"error": f"Model exist but failed to load! Error: {model_load_error} | Trace: {model_load_traceback}"}), 500
-        return jsonify({"error": "The Custom CNN Model (model.h5) is not generated yet! Please run train.py"}), 500
+            
+        if not model_loading:
+            model_loading = True
+            threading.Thread(target=load_model_bg, daemon=True).start()
+            
+        return jsonify({"error": "AI Model is booting up. Please wait 45 seconds and click scan again!"}), 503
 
     if "file" not in request.files:
         return jsonify({"error": "No file uploaded"}), 400
@@ -104,7 +113,7 @@ def predict():
         img_array = np.array(img_resized) / 255.0
         img_array = np.expand_dims(img_array, axis=0)
         
-        preds = loaded_model.predict(img_array)
+        preds = model.predict(img_array)
         class_idx = str(np.argmax(preds[0]))
         confidence = float(np.max(preds[0]))
         

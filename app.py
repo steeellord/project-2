@@ -95,8 +95,31 @@ def predict():
     file = request.files["file"]
     try:
         img = Image.open(file).convert("RGB")
-        img = img.resize((224, 224))
-        img_array = np.array(img) / 255.0
+        
+        # PRE-CHECK: Is it a leaf?
+        prompt = (
+            "Analyze this image. Is it a plant leaf? If yes, what plant and disease? "
+            "If healthy, set disease to 'Healthy'. "
+            "Respond ONLY with a JSON object in this exact format: "
+            '{"is_leaf": true, "plant": "Name", "disease": "Name", "confidence": 0.95}'
+        )
+        ai_data = {}
+        try:
+            ai_response = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=[img, prompt]
+            )
+            ai_text = ai_response.text.strip().removeprefix('```json').removesuffix('```').strip()
+            import json
+            ai_data = json.loads(ai_text)
+            
+            if not ai_data.get("is_leaf", True):
+                return jsonify({"error": "This does not look like a plant leaf. Please scan a clear image of a leaf."}), 400
+        except Exception as e:
+            print("Gemini API error:", e)
+            
+        img_resized = img.resize((224, 224))
+        img_array = np.array(img_resized) / 255.0
         img_array = np.expand_dims(img_array, axis=0)
         
         preds = model.predict(img_array)
@@ -108,11 +131,21 @@ def predict():
         plant = parts[0].replace("_", " ") if len(parts) > 0 else "Unknown"
         disease = parts[1].replace("_", " ") if len(parts) > 1 else "Unknown"
         
-        return jsonify({
+        response_data = {
             "plant": plant,
             "disease": disease,
-            "confidence": confidence
-        })
+            "confidence": confidence,
+            "source": "CNN"
+        }
+        
+        if (confidence < 0.80 or plant == "Unknown" or disease == "Unknown") and ai_data:
+            response_data["ai_fallback"] = {
+                "plant": ai_data.get("plant", "Unknown"),
+                "disease": ai_data.get("disease", "Unknown"),
+                "confidence": ai_data.get("confidence", 0.9)
+            }
+            
+        return jsonify(response_data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

@@ -193,15 +193,7 @@ const Scan = ({ t, setActiveTab }) => {
                         <p><strong>Plant:</strong> {predictionResult.plant}</p>
                         <p><strong>Disease:</strong> {predictionResult.disease}</p>
                         <p><strong>Confidence:</strong> {(predictionResult.confidence * 100).toFixed(1)}%</p>
-                        
-                        {predictionResult.ai_fallback && (
-                            <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
-                                <p style={{ color: '#ef4444', fontSize: '13px', marginBottom: 8, fontWeight: 'bold' }}>Result from AI as confidence was low:</p>
-                                <p><strong>Plant:</strong> {predictionResult.ai_fallback.plant}</p>
-                                <p><strong>Disease:</strong> {predictionResult.ai_fallback.disease}</p>
-                            </div>
-                        )}
-                        
+
                         <button 
                             className="btn-primary" 
                             style={{ marginTop: 16, marginBottom: 0 }}

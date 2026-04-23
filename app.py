@@ -9,11 +9,7 @@ import datetime
 
 TF_AVAILABLE = True # Assume true, will update in background thread
 
-from google import genai
-from dotenv import load_dotenv
 
-load_dotenv()
-client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY", ""))
 
 app = Flask(__name__, static_folder='dist', static_url_path='/')
 CORS(app)
@@ -104,28 +100,6 @@ def predict():
     try:
         img = Image.open(file).convert("RGB")
         
-        # PRE-CHECK: Is it a leaf?
-        prompt = (
-            "Analyze this image. Is it a plant leaf? If yes, what plant and disease? "
-            "If healthy, set disease to 'Healthy'. "
-            "Respond ONLY with a JSON object in this exact format: "
-            '{"is_leaf": true, "plant": "Name", "disease": "Name", "confidence": 0.95}'
-        )
-        ai_data = {}
-        try:
-            ai_response = client.models.generate_content(
-                model='gemini-2.5-flash',
-                contents=[img, prompt]
-            )
-            ai_text = ai_response.text.strip().removeprefix('```json').removesuffix('```').strip()
-            import json
-            ai_data = json.loads(ai_text)
-            
-            if not ai_data.get("is_leaf", True):
-                return jsonify({"error": "This does not look like a plant leaf. Please scan a clear image of a leaf."}), 400
-        except Exception as e:
-            print("Gemini API error:", e)
-            
         img_resized = img.resize((224, 224))
         img_array = np.array(img_resized) / 255.0
         img_array = np.expand_dims(img_array, axis=0)
@@ -139,32 +113,12 @@ def predict():
         plant = parts[0].replace("_", " ") if len(parts) > 0 else "Unknown"
         disease = parts[1].replace("_", " ") if len(parts) > 1 else "Unknown"
         
-        response_data = {
+        return jsonify({
             "plant": plant,
             "disease": disease,
             "confidence": confidence,
             "source": "CNN"
-        }
-        
-        # Determine if we should show the AI fallback
-        show_ai = False
-        if confidence < 0.80 or plant == "Unknown" or disease == "Unknown":
-            show_ai = True
-        elif ai_data:
-            # Check for hallucination: CNN says one plant, but AI says another (e.g. CNN says Strawberry, AI says Mango)
-            cnn_p = plant.lower().split()[0]
-            ai_p = ai_data.get("plant", "").lower().split()[0]
-            if cnn_p and ai_p and cnn_p not in ai_p and ai_p not in cnn_p:
-                show_ai = True
-
-        if show_ai and ai_data:
-            response_data["ai_fallback"] = {
-                "plant": ai_data.get("plant", "Unknown"),
-                "disease": ai_data.get("disease", "Unknown"),
-                "confidence": ai_data.get("confidence", 0.9)
-            }
-            
-        return jsonify(response_data)
+        })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

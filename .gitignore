@@ -1,8 +1,20 @@
 node_modules/
 Dataset/
 .DS_Store
-
-
-test.jpg
 .env
 capstone.db
+test.jpg
+
+# Python
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Logs & training artefacts
+server_log.txt
+training_log.txt
+test_predict.py
+
+# Build output (Render builds this itself)
+dist/
